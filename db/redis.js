@@ -136,6 +136,5 @@ module.exports = {
     getAsync,
     getZsetRange,
     zsetZadd,
-    zsetZadd,
     publish
 }

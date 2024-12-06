@@ -11,10 +11,12 @@
       查询玩家自己排行榜或者查询总榜数据:2712_cs_get_rankingList{uid: number, type: number, page:number, item:number} 2712_sc_get_rankingList{uid: number, score: number，rank: number, nearRankingList:obj} 
       // type为不同的排行榜, obj为Object类型的结构体，有uid，score，rank的信息, page为第几页，item每页的条数
       推送玩家自己排行榜数据:2713_sc_send_rankingList{uid: number, type:number, score: number，rank: number}
-2 针对功能来说
+2 针对排名功能来说
   2.1 玩家在线状态与不在线状态（玩家状态可以通过布隆过滤器来实现，100万的数据大约需要30M的存储空间）
   2.2 排行榜可以存储为redis的zset类型，redis集群部署，一主一从或者一主两从都可以（因为存储方式为哈希槽，所以数据存储比较均衡）
   2.3 服务器实时上报玩家的分数，可以利用redis的订阅与发布来完成。
   2.4 具体redis中的存储信息，key可以区分不同的排行榜，value值是完成越早越排在前。我们可以将完成时间定为一个较远时间点（比如2050-01-01）的相对时间，计算公式为：分数 = 分数 + (基准时间 - 通关时间)。这样可以解决同分数的情况下排名的问题(做时间差)。
   2.5 每当有玩家更改了排名信息后，在玩家排名后的玩家利用redis的发布功能来通知（被超越），进入前一百名同理
+3 针对系统拓展来说
+  需要有一个config目录，将排行榜类型定义好，此处应该有热更需求（防止配错与方便拓展），在服务启动时加载，将文件中的信息加载到内存中，这样当客户端消息来临时，直接在内存中进行查找（处理快）
   

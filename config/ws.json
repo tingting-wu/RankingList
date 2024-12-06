@@ -1,0 +1,7 @@
+{
+    "2710": "heartBeat",
+    "2711": "disconnect",
+    "2712": "reconnect",
+    "2713": "get_rankingList",
+    "2714": "send_rankingList"
+}
