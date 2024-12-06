@@ -58,12 +58,12 @@ async function getZsetRange(key, from, to) {
 }
 
 // 插入或者更新数据
-async function zsetZadd(key, filed, value) {
+async function zsetZadd(key, uid, value) {
     const client = await connectRedis();
 
     try {
         key = await getEey(type, key);
-        const result = await client.zadd(key, filed, value);
+        const result = await client.zadd(key, uid, value);
         console.log('获取key值成功');
         return result;
     } catch (error){
@@ -72,47 +72,17 @@ async function zsetZadd(key, filed, value) {
     }
 }
 
-// 插入或者更新数据
-async function zsetZadd(key, filed, value) {
+// 获取排名
+async function zrank(key, uid) {
     const client = await connectRedis();
 
     try {
         key = await getEey(type, key);
-        const result = await client.zadd(key, filed, value);
-        console.log('获取key值成功');
+        const result = await client.zrank(key, uid);
+        console.log('获取排行榜成功');
         return result;
     } catch (error){
-        console.log('获取key值失败');
-        throw error;
-    }
-}
-
-// 插入或者更新数据
-async function zsetZadd(key, filed, value) {
-    const client = await connectRedis();
-
-    try {
-        key = await getEey(type, key);
-        const result = await client.zadd(key, filed, value);
-        console.log('获取key值成功');
-        return result;
-    } catch (error){
-        console.log('获取key值失败');
-        throw error;
-    }
-}
-
-// 插入或者更新数据
-async function zsetZadd(key, filed, value) {
-    const client = await connectRedis();
-
-    try {
-        key = await getEey(type, key);
-        const result = await client.zadd(key, filed, value);
-        console.log('获取key值成功');
-        return result;
-    } catch (error){
-        console.log('获取key值失败');
+        console.log('获取排行榜失败');
         throw error;
     }
 }
@@ -130,11 +100,26 @@ async function publish(channel, message) {
     }
 }
 
+async function subscribe(channel) {
+    const client = await connectRedis();
+
+    try {
+        const result = await client.subscribe(channel);
+        console.log('消息发布成功');
+        return result;
+    } catch (error){
+        console.log('消息发布成功');
+        throw error;
+    }
+}
+
 
 module.exports = {
     setAsync,
     getAsync,
     getZsetRange,
     zsetZadd,
-    publish
+    zrank,
+    publish,
+    subscribe
 }
