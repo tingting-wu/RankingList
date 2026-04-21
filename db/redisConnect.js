@@ -1,29 +1,34 @@
-
 import { Redis } from 'ioredis';
-import { dailyLogger } from './../commom/logger'
+import logger from '../commom/logger.js';
 
-function connectRedis() {
-    const client = new Redis({
-        port: 6379,
-        host: "127.0.0.1",
-        db: 0,
-      });
+let redisClient = null;
 
+export function initRedis() {
     return new Promise((resolve, reject) => {
-        client.on('connect', () => {
-            console.log("redis链接成功");
-            dailyLogger.info('redis链接成功');
-            resolve(client);
-        })
+        redisClient = new Redis({
+            port: 6379,
+            host: "127.0.0.1",
+            db: 0,
+            retryStrategy: (times) => {
+                const delay = Math.min(times * 50, 2000);
+                return delay;
+            }
+        });
 
-        client.on('error', () => {
-            console.error("redis链接失败");
-            dailyLogger.info('redis链接失败');
-            reject(client);
-        })
-    })
+        redisClient.on('connect', () => {
+            logger.info('Redis connected');
+            resolve(redisClient);
+        });
+
+        redisClient.on('error', (err) => {
+            logger.error('Redis connection failed:', err);
+            reject(err);
+        });
+    });
 }
 
-module.exports = {
-    connectRedis
+export function getRedisClient() {
+    return redisClient;
 }
+
+export default { initRedis, getRedisClient };

@@ -1,25 +1,85 @@
 import { Server } from 'ws';
-import { fs } from 'fs';
- 
-const wss = new Server({ port: 3000 });
- 
-wss.on('connection', function connection(ws) {
-  console.log('连接建立');
- 
-  ws.on('message', function incoming(message) {
-    console.log(message);
-    // 解析收到的消息(协议号与协议内容等)，在根目录下config中的wsConfig文件中查找协议消息与序列号
-    // 不符合要求的直接return掉，同时在logger中记录，可能需要记录下IP地址等(可能涉及违规操作等)
-    // 参数校验后，将符合条件的请求将直接转换到netHandler目录下的具体业务逻辑
-    let configdata = fs.readFileSync('./../config/ws.json', 'uTf-8');
-    ws.send('你发送的消息已接收：' + message);
-  });
- 
-  ws.on('close', function close() {
-    console.log('连接断开');
-  });
- 
-  ws.on('error', function error(e) {
-    console.log('发生错误: %s', e);
-  });
-});
+import logger from '../commom/logger.js';
+
+const clients = new Map();
+
+export function startWebSocketServer(port = 3000) {
+    const wss = new Server({ port });
+
+    wss.on('connection', function connection(ws, req) {
+        const clientIp = req.socket.remoteAddress;
+        logger.info(`New connection from ${clientIp}`);
+
+        ws.isAlive = true;
+        ws.uid = null;
+
+        ws.on('pong', () => {
+            ws.isAlive = true;
+        });
+
+        ws.on('message', async function incoming(message) {
+            try {
+                const data = JSON.parse(message);
+                const { protocolId, ...params } = data;
+
+                if (!global.wsConfig[protocolId]) {
+                    logger.warn(`Unknown protocol: ${protocolId} from ${clientIp}`);
+                    ws.send(JSON.stringify({ protocolId: protocolId + '_sc', data: {}, code: -1, msg: 'Unknown protocol' }));
+                    return;
+                }
+
+                const handlerName = global.wsConfig[protocolId];
+                const handler = await import(`../netHandler/${handlerName}.js`);
+
+                if (handler && handler.handle) {
+                    handler.handle(ws, params, clients).then(response => {
+                        if (response) {
+                            ws.send(JSON.stringify({
+                                protocolId: protocolId + '_sc',
+                                data: response,
+                                code: 0,
+                                msg: 'success'
+                            }));
+                        }
+                    }).catch(err => {
+                        logger.error(`Handler error: ${handlerName}`, err);
+                        ws.send(JSON.stringify({ protocolId: protocolId + '_sc', data: {}, code: -1, msg: err.message }));
+                    });
+                } else {
+                    logger.warn(`Handler not found: ${handlerName}`);
+                }
+            } catch (error) {
+                logger.error('Message parse error:', error);
+            }
+        });
+
+        ws.on('close', function close() {
+            logger.info(`Connection closed: ${ws.uid || clientIp}`);
+            if (ws.uid) {
+                clients.delete(ws.uid);
+            }
+        });
+
+        ws.on('error', function error(e) {
+            logger.error(`WebSocket error from ${clientIp}:`, e);
+        });
+    });
+
+    const interval = setInterval(() => {
+        wss.clients.forEach((ws) => {
+            if (ws.isAlive === false) {
+                return ws.terminate();
+            }
+            ws.isAlive = false;
+            ws.ping();
+        });
+    }, 30000);
+
+    wss.on('close', () => {
+        clearInterval(interval);
+    });
+
+    return wss;
+}
+
+export { clients };

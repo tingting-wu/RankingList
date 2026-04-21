@@ -1,10 +1,8 @@
-import { setLevel, LOGLEVEL, setFormatter, RotatingLogger, DailyLogger } from "napi-addon-spdlog";
+const logger = {
+    info: (...args) => console.log('[INFO]', ...args),
+    warn: (...args) => console.warn('[WARN]', ...args),
+    error: (...args) => console.error('[ERROR]', ...args),
+    debug: (...args) => console.log('[DEBUG]', ...args)
+};
 
-setLevel(LOGLEVEL.TRACE);
-setFormatter("[%H:%M:%S] [%l] -%v");
-
-const dailyLogger = new DailyLogger("test", "./logs/all.log", 2, 30);
-
-module.exports = {
-    dailyLogger
-}
+export default logger;

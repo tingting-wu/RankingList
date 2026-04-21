@@ -1,8 +1,12 @@
 {
+  "type": "module",
   "dependencies": {
     "fs": "^0.0.1-security",
     "ioredis": "^5.4.1",
     "redis": "^4.7.0",
-    "ws": "^8.18.0"
+    "ws": "^8.20.0"
+  },
+  "scripts": {
+    "start": "node index.js"
   }
 }

@@ -1,0 +1,9 @@
+{
+    "types": {
+        "1": "speed_ranking",
+        "2": "score_ranking",
+        "3": "time_ranking"
+    },
+    "defaultPageSize": 100,
+    "topNNotify": 100
+}
